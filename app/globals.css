@@ -1,26 +1,109 @@
 @import "tailwindcss";
 
+/* Master DOOMSDAY identity. Domain pages override the --d-* tokens inline. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --obsidian: #090909;
+  --charcoal: #171717;
+  --crimson: #b51224;
+  --offwhite: #f2f0ec;
+  --coolgrey: #a6a6a6;
+
+  --d-accent: var(--crimson);
+  --d-accent2: var(--crimson);
+  --d-deep: var(--charcoal);
+  --d-bg: var(--obsidian);
+  --d-fg: var(--offwhite);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-obsidian: var(--obsidian);
+  --color-charcoal: var(--charcoal);
+  --color-crimson: var(--crimson);
+  --color-offwhite: var(--offwhite);
+  --color-coolgrey: var(--coolgrey);
+
+  --color-accent: var(--d-accent);
+  --color-accent2: var(--d-accent2);
+  --color-deep: var(--d-deep);
+  --color-bg: var(--d-bg);
+  --color-fg: var(--d-fg);
+
+  --font-display: var(--font-anton), "Bebas Neue", Impact, sans-serif;
+  --font-sans: var(--font-inter), "Helvetica Neue", Arial, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background: var(--obsidian);
+  color-scheme: dark;
+  /* Guard against any decorative layer widening the layout viewport on phones. */
+  overflow-x: clip;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--d-bg);
+  color: var(--d-fg);
+  font-family: var(--font-sans);
+  overflow-x: clip;
+}
+
+::selection {
+  background: var(--d-accent);
+  color: var(--d-fg);
+}
+
+/* Subtle film grain across the whole page, per the brand guide. */
+.grain::after {
+  content: "";
+  position: fixed;
+  inset: -50%;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.07;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  animation: grain 0.9s steps(6) infinite;
+}
+
+@keyframes grain {
+  0% { transform: translate(0, 0); }
+  20% { transform: translate(-4%, 3%); }
+  40% { transform: translate(3%, -5%); }
+  60% { transform: translate(-2%, 6%); }
+  80% { transform: translate(5%, 2%); }
+  100% { transform: translate(0, 0); }
+}
+
+@keyframes window-flicker {
+  0%, 100% { opacity: 1; }
+  45% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+
+/* Animatable angle for the Black Panther button's energy border. */
+@property --claw-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes claw-spin {
+  to { --claw-angle: 360deg; }
+}
+
+@keyframes smoke-drift {
+  from { transform: translate3d(-3%, -2%, 0) scale(1); }
+  to { transform: translate3d(3%, 2%, 0) scale(1.06); }
+}
+
+@keyframes scroll-dot {
+  0% { transform: translateY(-120%); opacity: 0; }
+  30% { opacity: 1; }
+  100% { transform: translateY(220%); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .grain::after { animation: none; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }
