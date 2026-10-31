@@ -66,8 +66,20 @@ export interface HeroProp extends Cutout {
   scale: number;
 }
 
+/** Full-screen wipe that hides a jump in a generated video. Positions are fractions of the clip (0–1). */
+export interface HeroSplashConfig {
+  /** Where the jump happens. */
+  at: number;
+  /** How long the screen stays fully covered around it. */
+  hold: number;
+  /** How long each wipe takes to cross the screen (default 0.05). */
+  ramp?: number;
+  /** Word repeated faintly behind the wipe. */
+  text: string;
+}
+
 export type HeroMedia =
-  | { kind: "video"; src: string; poster?: string }
+  | { kind: "video"; src: string; poster?: string; splash?: HeroSplashConfig }
   | { kind: "image"; src: string; width: number; height: number; alt: string }
   /**
    * Transparent full-body figure composited over a blurred neon city,
@@ -148,9 +160,48 @@ export interface KunaiConfig {
   tagline: string;
 }
 
+/** A comic-art pose placed on the stage. Sizes are in viewport heights, measured from the top of the screen. */
+export interface StagePose extends Cutout {
+  /** Rendered height. */
+  h: number;
+  /** Where the bottom edge sits. */
+  bottom: number;
+  /** Horizontal centre offset from the middle of the screen, in viewport heights. */
+  x?: number;
+}
+
+/**
+ * Comic-to-real intro: a giant line alone, the comic character dives in and lands, stands, aims and
+ * shoots the viewer; the paint splat on the "screen" reveals the realistic version, and a second shot
+ * sends a 3D bullet past the camera with a word engraved on it.
+ */
+export interface ComicRevealConfig {
+  title: string;
+  eyebrow: string;
+  /** Line shown under the bullet close-up. */
+  tagline: string;
+  /** Word engraved on the bullet. */
+  etch: string;
+  fall: StagePose;
+  land: StagePose;
+  stand: StagePose;
+  /** Comic aiming pose and its realistic twin, framed identically. */
+  aim: StagePose;
+  aimReal: Cutout;
+  /** Muzzle of the gun the shots come from, as fractions of the aim image. */
+  muzzle: { x: number; y: number };
+  /** Sound-effect words for the landing and the first shot. */
+  sfx: { land: string; shot: string };
+  /** Comic narration boxes, one per beat of the animation. */
+  captions: Partial<Record<ComicBeat, string>>;
+}
+
+/** Beats of the comic intro that can carry a caption. */
+export type ComicBeat = "intro" | "fall" | "land" | "stand" | "aim";
+
 export interface CtaConfig {
-  /** "dial": round magnetic dial; "claw": angular vibranium plate with claw strikes. */
-  button: { label: string; href: string; style?: "dial" | "claw" };
+  /** "dial": round magnetic dial; "claw": angular vibranium plate with claw strikes; "merc": Deadpool comic panel with katana cuts. */
+  button: { label: string; href: string; style?: "dial" | "claw" | "merc" };
   heading: string;
   subheading: string;
   /** Small line under the button label. */
@@ -162,6 +213,7 @@ export type SectionConfig =
   | { type: "swing"; id: string; swing: SwingConfig }
   | { type: "hammock"; id: string; join: JoinConfig }
   | { type: "kunai"; id: string; kunai: KunaiConfig }
+  | { type: "comic-reveal"; id: string; reveal: ComicRevealConfig }
   | { type: "cta"; id: string; cta: CtaConfig };
 
 /** The fixed scene behind every section of a domain page. */
@@ -215,7 +267,7 @@ export const DOMAINS: Domain[] = [
     palette: { accent: "#E62429", accent2: "#1769D2", deep: "#101D32", bg: "#171717", fg: "#F2F5F8" },
     motif: "web-grid",
     credits:
-      "Spider-Man renders by thatKONNORguy and AkiTheFull (DeviantArt); hammock Spider-Man from Spider-Man: Homecoming promotional art (Sony / Marvel). City photo “New York City at night HDR” by Paulo Barcellos Jr. (CC BY-SA 2.0, tinted). Sunglasses from pngimg.com (CC BY-NC 4.0). Spider-Man © Marvel / Sony. Non-commercial student project.",
+      "Spider-Man renders by thatKONNORguy and AkiTheFull (DeviantArt); hammock Spider-Man from Spider-Man: Homecoming promotional art (Sony / Marvel). City photo “New York City at night HDR” by Paulo Barcellos Jr. (CC BY-SA 2.0, tinted). Spider-Man © Marvel / Sony. Non-commercial student project.",
     headline: "Question everything.",
     altHeadlines: ["Curiosity Builds Tomorrow.", "Test. Learn. Build Again.", "Ideas Are Only the Beginning."],
     caption:
@@ -228,18 +280,19 @@ export const DOMAINS: Domain[] = [
           id: "hero",
           hero: {
             label: "Question everything",
+            // Generated with Wan 2.2 first/last-frame (head → orbit to back → down to legs); see ASSET_PROMPTS.md.
             media: {
-              kind: "cutout",
-              figure: { src: "/domains/rnd/hero-figure.webp", width: 741, height: 1924, alt: "Spider-Man in the integrated suit" },
-              backdrop: { src: "/domains/rnd/city-night.webp", tint: "#18a99c" },
-              rim: "rgba(24,169,156,0.3)",
-              props: [{ src: "/domains/rnd/glasses.webp", width: 594, height: 355, alt: "Sunglasses on the ground", x: 0.98, scale: 0.3 }],
+              kind: "video",
+              src: "/domains/rnd/hero.mp4",
+              poster: "/domains/rnd/hero-poster.jpg",
+              // the frames where the model morphed his back into his front are cut out of the clip; the splash covers the cut
+              splash: { at: 0.8065, hold: 0.03, text: "Question everything" },
             },
             title: "Question Everything",
             stops: [
               {
                 id: "head",
-                focus: 0.06,
+                focus: 0,
                 eyebrow: "R&D · Spider-Man",
                 body: "The Curious Problem Solver. Eight domains, one mission — this one starts with a question.",
                 cta: { label: "Apply for R&D", href: APPLY_HREF },
@@ -247,16 +300,16 @@ export const DOMAINS: Domain[] = [
                 placement: "bottom",
               },
               {
-                id: "chest",
-                focus: 0.28,
+                id: "back",
+                focus: 0.585,
                 eyebrow: "Domain personality",
                 title: "Curious. Analytical. Experimental.",
                 body: "Analyse situations quickly, improvise technically and turn a messy problem into a working idea.",
-                align: "left",
+                align: "right",
               },
               {
                 id: "legs",
-                focus: 0.82,
+                focus: 1,
                 eyebrow: "Recruitment 2026",
                 title: "Test. Learn. Build again.",
                 body: "If you always ask “what if we tried this instead?”, this might be your domain.",
@@ -459,6 +512,101 @@ export const DOMAINS: Domain[] = [
     altHeadlines: ["We Don't Do Boring.", "Your Words. Our Weapon.", "Unfiltered By Design."],
     caption:
       "The internet has enough content. What it needs is something worth remembering. No boring scripts. No forgettable stories. Just content with a personality.",
+    credits:
+      "Deadpool renders from pngimg.com, pngmart.com and DeviantArt (AkiTheFull, Asthonx1, DonComediaTV), comic versions processed in-house. Deadpool © Marvel / 20th Century Studios. Non-commercial student project.",
+    experience: {
+      backdrop: { kind: "smoke" },
+      sections: [
+        {
+          type: "comic-reveal",
+          id: "hero",
+          reveal: {
+            title: "Break the fourth wall",
+            eyebrow: "Content · Deadpool",
+            tagline: "Your words. Our weapon.",
+            etch: "CONTENT",
+            fall: { src: "/domains/content/fall-comic.webp", width: 1517, height: 1000, alt: "", h: 0.42, bottom: 0.82 },
+            land: { src: "/domains/content/land-comic.webp", width: 1854, height: 1100, alt: "", h: 0.46, bottom: 0.9 },
+            stand: { src: "/domains/content/stand-comic.webp", width: 820, height: 1800, alt: "", h: 0.84, bottom: 0.93 },
+            // one arm out, pistol pointing left, standing on the right; bleeds off the bottom of the screen
+            aim: {
+              src: "/domains/content/aim-comic.webp",
+              width: 1275,
+              height: 1800,
+              alt: "Comic-book Deadpool aiming a pistol to the left",
+              h: 1.0,
+              bottom: 1.05,
+              x: 0.42,
+            },
+            aimReal: { src: "/domains/content/aim.webp", width: 1275, height: 1800, alt: "Deadpool aiming a pistol to the left" },
+            muzzle: { x: 0.007, y: 0.13 },
+            sfx: { land: "KRAK!", shot: "BANG!" },
+            captions: {
+              intro: "Meanwhile, at KIIT E-Cell…",
+              fall: "Incoming: one storyteller, zero filter.",
+              land: "Superhero landing. Terrible for the knees. Great for the story.",
+              stand: "Every story needs an entrance.",
+              aim: "Got something to say? Make it hit.",
+            },
+          },
+        },
+        {
+          type: "scroll-pan",
+          id: "merc",
+          hero: {
+            // Walking clip from the Kaggle notebook, re-composited onto the clean street (video-kits/deadpool).
+            media: { kind: "video", src: "/domains/content/walk.mp4", poster: "/domains/content/walk-poster.jpg" },
+            label: "Deadpool",
+            // copy alternates sides as he walks towards the camera
+            stops: [
+              {
+                id: "step-1",
+                focus: 0,
+                eyebrow: "Content · Deadpool",
+                title: "The Unfiltered Storyteller",
+                body: "Wit, a distinctive voice and unconventional storytelling: ideas communicated memorably.",
+                align: "left",
+              },
+              {
+                id: "step-2",
+                focus: 0.34,
+                eyebrow: "Domain personality",
+                title: "Witty. Original. Sharp.",
+                body: "You write the line people quote back to you, and you know when to cut the rest.",
+                align: "right",
+              },
+              {
+                id: "step-3",
+                focus: 0.67,
+                eyebrow: "How you work",
+                title: "Relatable. Unconventional.",
+                body: "Scripts, reels, captions and stories with a personality the internet actually remembers.",
+                align: "left",
+              },
+              {
+                id: "step-4",
+                focus: 1,
+                eyebrow: "Recruitment 2026",
+                title: "We don't do boring.",
+                body: "The internet has enough content. What it needs is something worth remembering.",
+                cta: { label: "Apply for Content", href: APPLY_HREF },
+                align: "right",
+              },
+            ],
+          },
+        },
+        {
+          type: "cta",
+          id: "join",
+          cta: {
+            heading: "Unfiltered by design",
+            subheading: "No boring scripts. No forgettable stories. Just content with a personality.",
+            button: { label: "Apply Now", href: APPLY_HREF, style: "merc" },
+            buttonTagline: "Maximum effort",
+          },
+        },
+      ],
+    },
   },
 ];
 

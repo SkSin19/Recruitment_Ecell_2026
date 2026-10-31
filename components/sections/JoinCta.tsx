@@ -5,6 +5,7 @@ import type { CtaConfig, DomainSlug, Motif } from "@/lib/domains";
 import { gsap, useGSAP } from "@/lib/gsap";
 import MagneticButton from "@/components/ui/MagneticButton";
 import ClawButton from "@/components/ui/ClawButton";
+import MercButton from "@/components/ui/MercButton";
 import { DomainMark, MotifPattern } from "@/components/ui/Motifs";
 
 /** Final call to action for domains without a bespoke closing scene. Fades into the footer below. */
@@ -56,6 +57,8 @@ export default function JoinCta({ id, cta, slug, motif }: { id: string; cta: Cta
         <div className="mt-4">
           {cta.button.style === "claw" ? (
             <ClawButton href={cta.button.href} label={cta.button.label} tagline={cta.buttonTagline} />
+          ) : cta.button.style === "merc" ? (
+            <MercButton href={cta.button.href} label={cta.button.label} tagline={cta.buttonTagline} />
           ) : (
             <MagneticButton href={cta.button.href} label={cta.button.label} tagline={cta.buttonTagline} slug={slug} motif={motif} />
           )}

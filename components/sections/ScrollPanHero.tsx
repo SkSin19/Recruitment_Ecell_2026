@@ -7,6 +7,7 @@ import type { HeroConfig, Motif } from "@/lib/domains";
 import { clamp01, createSpring, gsap, ScrollTrigger, stairProgress, useGSAP } from "@/lib/gsap";
 import { MotifPattern } from "@/components/ui/Motifs";
 import { CINEMATIC_GRADE } from "@/lib/grade";
+import HeroSplash, { updateHeroSplash } from "@/components/ui/HeroSplash";
 
 /** Viewport-heights of scroll spent travelling between two camera stops. */
 const SCROLL_PER_STOP = 110;
@@ -33,6 +34,11 @@ interface Props {
   fadeIn?: boolean;
   /** Start on the previous section's final screen, so the entrance plays the moment it finishes. */
   overlapPrev?: boolean;
+  /**
+   * Sit pinned, still on the first stop, underneath the previous section's last screen for one extra screen
+   * of scroll, so that section can break away (e.g. shatter) onto a view that is already in place.
+   */
+  underlay?: boolean;
 }
 
 /**
@@ -41,7 +47,17 @@ interface Props {
  * character first falls in from above the screen. Works with a scroll-scrubbed
  * video, a tall still image or a transparent cut-out.
  */
-export default function ScrollPanHero({ id, hero, motif, nextId, cornerLeft, cornerRight, fadeIn = false, overlapPrev = false }: Props) {
+export default function ScrollPanHero({
+  id,
+  hero,
+  motif,
+  nextId,
+  cornerLeft,
+  cornerRight,
+  fadeIn = false,
+  overlapPrev = false,
+  underlay = false,
+}: Props) {
   const root = useRef<HTMLElement>(null);
   const media = useRef<HTMLDivElement>(null);
   const stage = useRef<HTMLDivElement>(null);
@@ -84,7 +100,8 @@ export default function ScrollPanHero({ id, hero, motif, nextId, cornerLeft, cor
 
       ScrollTrigger.create({
         trigger: el,
-        start: "top top",
+        // an underlay holds its first frame for one screen before the camera starts moving
+        start: () => (underlay ? `top+=${window.innerHeight} top` : "top top"),
         end: "bottom bottom",
         onUpdate: (self) => {
           progress = self.progress;
@@ -108,6 +125,7 @@ export default function ScrollPanHero({ id, hero, motif, nextId, cornerLeft, cor
             const t = focus * (v.duration - 0.05);
             if (!v.seeking && Math.abs(v.currentTime - t) > 0.015) v.currentTime = t;
           }
+          if (hero.media.splash) updateHeroSplash(el, hero.media.splash, focus);
           mediaEl.style.transform = `translate3d(0, ${(0.5 - focus) * 4}vh, 0) scale(${1.06 * zoom})`;
         } else if (hero.media.kind === "cutout") {
           const y = Math.min(
@@ -170,7 +188,7 @@ export default function ScrollPanHero({ id, hero, motif, nextId, cornerLeft, cor
         window.removeEventListener("resize", onResize);
       };
     },
-    { scope: root, dependencies: [hero] },
+    { scope: root, dependencies: [hero, underlay] },
   );
 
   const goToStop = (i: number) => {
@@ -180,8 +198,9 @@ export default function ScrollPanHero({ id, hero, motif, nextId, cornerLeft, cor
       lenis.scrollTo(`#${nextId}`, { duration: 1.6 });
       return;
     }
-    const top = el.getBoundingClientRect().top + window.scrollY;
-    lenis.scrollTo(top + ((i - first) / segments) * (el.offsetHeight - window.innerHeight), { duration: 1.6 });
+    const lead = underlay ? window.innerHeight : 0;
+    const top = el.getBoundingClientRect().top + window.scrollY + lead;
+    lenis.scrollTo(top + ((i - first) / segments) * (el.offsetHeight - lead - window.innerHeight), { duration: 1.6 });
   };
 
   const words = hero.title?.split(" ") ?? [];
@@ -192,8 +211,8 @@ export default function ScrollPanHero({ id, hero, motif, nextId, cornerLeft, cor
       ref={root}
       id={id}
       aria-label={hero.label}
-      className={overlapPrev ? "relative -mt-[100svh]" : "relative"}
-      style={{ height: `calc(${segments * SCROLL_PER_STOP}vh + 100svh)` }}
+      className={underlay ? "relative -mt-[200svh]" : overlapPrev ? "relative -mt-[100svh]" : "relative"}
+      style={{ height: `calc(${segments * SCROLL_PER_STOP}vh + ${underlay ? 200 : 100}svh)` }}
     >
       <div className="sticky top-0 h-svh overflow-hidden">
         {/* Camera layer, inside a static fade wrapper: the camera layer is scaled and moved, so the fade must live
@@ -262,6 +281,8 @@ export default function ScrollPanHero({ id, hero, motif, nextId, cornerLeft, cor
             )}
           </div>
         </div>
+
+        {hero.media.kind === "video" && hero.media.splash && <HeroSplash splash={hero.media.splash} />}
 
         {/* Optional giant title, scrolls away with the camera */}
         {words.length > 0 && (

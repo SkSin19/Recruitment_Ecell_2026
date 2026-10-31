@@ -16,6 +16,23 @@ export function PantherMark(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+/** Deadpool's mask disc: red rim, black eye panels split by a red bar, white eyes (the right one winks inside a hovered `group`). */
+export function DeadpoolMark(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 64 64" aria-hidden="true" {...props}>
+      <circle cx="32" cy="32" r="30" fill="var(--d-accent)" stroke="#111" strokeWidth="3" />
+      <circle cx="32" cy="32" r="21" fill="#111" />
+      <rect x="28.5" y="9" width="7" height="46" fill="var(--d-accent)" />
+      <path d="M13.5 27 C17 24 22 24.5 25 28 C22 31 17 31 13.5 27 Z" fill="#fff" />
+      <path
+        d="M50.5 27 C47 24 42 24.5 39 28 C42 31 47 31 50.5 27 Z"
+        fill="#fff"
+        className="origin-[45px_27.5px] transition-transform duration-150 group-hover:scale-y-[0.15]"
+      />
+    </svg>
+  );
+}
+
 /** Neutral DOOMSDAY diamond for domains without a character mark yet. */
 function DiamondMark(props: SVGProps<SVGSVGElement>) {
   return (
@@ -29,6 +46,7 @@ function DiamondMark(props: SVGProps<SVGSVGElement>) {
 export function DomainMark({ slug, ...props }: { slug: DomainSlug } & SVGProps<SVGSVGElement>) {
   if (slug === "rnd") return <SpiderMark {...props} />;
   if (slug === "tech") return <PantherMark {...props} />;
+  if (slug === "content") return <DeadpoolMark {...props} />;
   return <DiamondMark {...props} />;
 }
 

@@ -7,6 +7,7 @@ import ScrollPanHero from "@/components/sections/ScrollPanHero";
 import SwingSplit from "@/components/sections/SwingSplit";
 import WebBedJoin from "@/components/sections/WebBedJoin";
 import KunaiHero from "@/components/sections/KunaiHero";
+import ComicRevealHero from "@/components/sections/ComicRevealHero";
 import JoinCta from "@/components/sections/JoinCta";
 import SiteFooter from "@/components/sections/SiteFooter";
 import ComingSoon from "@/components/sections/ComingSoon";
@@ -67,8 +68,10 @@ function Section({
           nextId={nextId}
           cornerLeft={`KIIT E-Cell · ${domain.name}`}
           cornerRight="Recruitment 2026"
-          fadeIn={Boolean(prev)}
+          // after the comic intro the glass shatters straight onto this section, so it must already be in place
+          fadeIn={Boolean(prev) && prev?.type !== "comic-reveal"}
           overlapPrev={prev?.type === "kunai"}
+          underlay={prev?.type === "comic-reveal"}
         />
       );
     case "swing":
@@ -77,6 +80,8 @@ function Section({
       return <WebBedJoin id={section.id} join={section.join} slug={domain.slug} motif={domain.motif} />;
     case "kunai":
       return <KunaiHero id={section.id} kunai={section.kunai} accent={domain.palette.accent} />;
+    case "comic-reveal":
+      return <ComicRevealHero id={section.id} reveal={section.reveal} accent={domain.palette.accent} />;
     case "cta":
       return <JoinCta id={section.id} cta={section.cta} slug={domain.slug} motif={domain.motif} />;
   }

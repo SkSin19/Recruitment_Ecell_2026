@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# raw generator downloads (final encodes live in public/)
+/video-kits/*/clips/
